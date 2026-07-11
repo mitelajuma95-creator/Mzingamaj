@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mzinga Maji — Deni & SMS</title>
+<style>
+  :root{
+    --deep:#0b3d4c; --teal:#0f6674; --aqua:#3aa0ac;
+    --foam:#eaf5f4; --sand:#d98e4a; --ink:#0b2530;
+    --danger:#b3432f; --line:#cfe3e1; --ok:#2f8f5b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:linear-gradient(180deg,var(--deep) 0%, var(--teal) 180px, var(--foam) 180px);
+    color:var(--ink); min-height:100vh; padding-bottom:60px;
+  }
+  header{ padding:26px 20px 16px; color:#fff; text-align:center; }
+  header .eyebrow{ letter-spacing:.14em; text-transform:uppercase; font-size:11px; opacity:.75; margin-bottom:6px; }
+  header h1{ margin:0; font-size:22px; font-weight:700; }
+  header p{ margin:8px 0 0; font-size:13px; opacity:.85; max-width:420px; margin:8px auto 0; }
+  .wave{ height:3px; background:linear-gradient(90deg,var(--sand),var(--aqua),var(--sand)); margin:14px auto 0; width:60px; border-radius:2px; }
+  main{ max-width:560px; margin:0 auto; padding:0 16px; }
+  .card{ background:#fff; border-radius:14px; box-shadow:0 8px 24px rgba(11,61,76,.12); padding:18px; margin-top:-30px; position:relative; z-index:2; margin-bottom:14px; }
+  .note{ font-size:12.5px; color:#5a7a80; background:var(--foam); border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.5; }
+  .note b{ color:var(--deep); }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .tab{ flex:1; text-align:center; padding:9px 6px; border-radius:8px; font-size:12.5px; font-weight:600;
+        background:var(--foam); color:var(--teal); cursor:pointer; border:1px solid var(--line); }
+  .tab.active{ background:var(--deep); color:#fff; border-color:var(--deep); }
+
+  textarea#pasteBox{
+    width:100%; min-height:120px; border:1px solid var(--line); border-radius:8px;
+    padding:10px; font-family:'Consolas',monospace; font-size:11.5px; resize:vertical; color:var(--ink);
+  }
+  .row{ display:flex; gap:8px; margin-top:10px; }
+  .btn{
+    flex:1; background:var(--deep); color:#fff; border:none; padding:11px 14px;
+    border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer;
+  }
+  .btn.secondary{ background:#fff; color:var(--deep); border:1px solid var(--line); }
+  .btn.small{ padding:8px 10px; font-size:12px; }
+  input[type=file]{ font-size:12.5px; }
+
+  .filterRow{ display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  .filterRow label{ font-size:12px; color:var(--deep); font-weight:600; }
+  .filterRow select, .filterRow input[type=number]{
+    border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:12.5px;
+  }
+  .msgTemplate{ margin-top:12px; }
+  .msgTemplate label{ font-size:12px; font-weight:700; color:var(--deep); display:block; margin-bottom:4px; }
+  .msgTemplate textarea{
+    width:100%; min-height:70px; border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; font-family:inherit; font-size:12.5px; resize:vertical; color:var(--ink);
+  }
+  .placeholders{ font-size:11px; color:#5a7a80; margin-top:4px; }
+  .placeholders code{ background:var(--foam); padding:1px 5px; border-radius:4px; color:var(--deep); }
+
+  .total-bar{
+    background:var(--deep); color:#fff; border-radius:10px; padding:12px 16px;
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; font-size:13px;
+  }
+  .total-bar b{ font-size:16px; }
+  .results-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+  .results-head h2{ font-size:15px; margin:0; color:var(--deep); }
+  .results-head span{ font-size:12px; color:#5a7a80; }
+
+  .search{ width:100%; border:1px solid var(--line); border-radius:8px; padding:9px 10px; font-size:13px; margin-bottom:12px; }
+
+  .debtor{
+    background:#fff; border:1px solid var(--line); border-left:4px solid var(--sand);
+    border-radius:10px; padding:14px; margin-bottom:10px;
+  }
+  .debtor.sent{ border-left-color:var(--ok); opacity:.6; }
+  .debtor .name{ font-weight:700; font-size:15px; color:var(--ink); }
+  .debtor .meta{ font-size:12px; color:#5a7a80; margin-top:2px; }
+  .debtor .amount{ font-size:19px; font-weight:800; color:var(--danger); margin-top:8px; }
+  .debtor textarea{
+    width:100%; margin-top:10px; border:1px solid var(--line); border-radius:8px;
+    padding:8px 10px; font-family:inherit; font-size:13px; resize:vertical; min-height:60px; color:var(--ink);
+  }
+  .debtor .actions{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .debtor .send-btn, .debtor .wa-btn{
+    display:inline-flex; align-items:center; gap:6px; background:var(--deep);
+    color:#fff; border:none; padding:9px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .debtor .wa-btn{ background:#25915a; }
+  .debtor .mark-btn{
+    background:#fff; color:var(--ok); border:1px solid var(--ok); padding:9px 12px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .empty{ text-align:center; color:#5a7a80; font-size:13px; padding:30px 0; }
+  .hidden{ display:none !important; }
+  .warn{ color:var(--danger); font-size:12px; margin-top:6px; }
+  .stat-mini{ font-size:11.5px; color:#5a7a80; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Mzinga Maji</div>
+  <h1>Wenye Deni — Ukumbusho wa SMS</h1>
+  <p>Bandika (paste) data ya wateja moja kwa moja kutoka kwenye ripoti yako, chagua wenye deni, na tuma SMS ya ukumbusho.</p>
+  <div class="wave"></div>
+</header>
+
+<main>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab active" data-tab="paste">📋 Bandika Data</div>
+      <div class="tab" data-tab="csv">📁 Pakia CSV</div>
+      <div class="tab" data-tab="pdf">📄 Pakia PDF</div>
+    </div>
+
+    <div id="tab-paste">
+      <div class="note">
+        Nenda kwenye ripoti yako, <b>chagua jedwali zima</b> (majina, namba, madeni) kwa kidole/mouse, <b>copy</b>, kisha <b>bandika (paste)</b> hapa chini. Inaweza kuwa umenakili kutoka kwenye jedwali la wavuti au Excel.
+      </div>
+      <textarea id="pasteBox" placeholder="Bandika hapa... mfano:&#10;Abdallah salumu&#9;Mzinga B&#9;255789446244&#9;4000&#9;0&#9;4000&#9;2026-06-22"></textarea>
+      <div class="row">
+        <button class="btn" id="parseBtn">Soma Data</button>
+        <button class="btn secondary" id="clearPasteBtn">Futa</button>
+      </div>
+    </div>
+
+    <div id="tab-csv" class="hidden">
+      <div class="note">Pakia faili la CSV lililotolewa (exported) kutoka kwenye ripoti yako ya Mzinga Maji.</div>
+      <input type="file" id="csvFile" accept=".csv,.txt">
+    </div>
+
+    <div id="tab-pdf" class="hidden">
+      <div class="note">Pakia faili la PDF la ripoti yako ya wateja/madeni. Programu itasoma jedwali kutoka ndani ya PDF moja kwa moja kwa kutumia OCR (kusoma picha). Hii inahitaji <b>mtandao mzuri</b> mara ya kwanza (kupakua kisomaji), na inachukua sekunde kadhaa kwa kila ukurasa.</div>
+      <input type="file" id="pdfFile" accept="application/pdf">
+      <div id="pdfStatus" class="stat-mini" style="margin-top:8px;"></div>
+    </div>
+
+    <div id="parseWarn" class="warn hidden"></div>
+  </div>
+
+  <div class="card" id="controlsCard" style="display:none">
+    <div class="total-bar">
+      <span id="statLabel">Jumla ya deni (waliochaguliwa)</span>
+      <b id="totalAmount"></b>
+    </div>
+
+    <div class="filterRow">
+      <label>Onyesha:</label>
+      <select id="filterMode">
+        <option value="debt_only">Wenye deni pekee (Debt &gt; 0)</option>
+        <option value="all">Wote</option>
+      </select>
+      <label>Deni ≥</label>
+      <input type="number" id="minDebt" value="1" style="width:80px">
+      <button class="btn small secondary" id="applyFilterBtn">Chuja</button>
+    </div>
+
+    <div class="msgTemplate">
+      <label>Kiolezo cha Ujumbe (kitatumika kwa kila mteja)</label>
+      <textarea id="template">Mzinga Maji: Habari {jina}, unadaiwa {deni} kwa huduma ya maji ({anwani}). {hali}</textarea>
+      <div class="placeholders">Tumia: <code>{jina}</code> <code>{deni}</code> <code>{anwani}</code> <code>{namba}</code> <code>{tarehe}</code> <code>{mwisho}</code> <code>{hali}</code> (hali inabadilika: kabla/leo/imepita)</div>
+      <div class="row">
+        <button class="btn small" id="applyTemplateBtn">Weka Ujumbe Huu Kwa Wote</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="bulkCard" style="display:none">
+    <div class="note">
+      <b>Tuma SMS kwa Wote mara moja:</b> Bonyeza kitufe hapa chini — kila SMS itafunguliwa kwa zamu (kimoja baada ya kingine) ili uweze kubonyeza "Tuma" haraka bila kurudi kwenye orodha. Weka muda kidogo kati ya kila moja ili simu yako iweze kufungua app ya SMS.
+    </div>
+    <div class="row">
+      <button class="btn" id="bulkSendBtn">📱 Tuma kwa Wote (SMS)</button>
+      <button class="btn secondary" id="stopBulkBtn" style="display:none">⏹ Simamisha</button>
+    </div>
+    <div id="bulkProgress" class="stat-mini" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="card" id="storageCard">
+    <div class="note" style="margin-bottom:8px;">
+      <b>Hifadhi ya kudumu:</b> Wateja wote wanaosomwa huhifadhiwa kwenye kifaa hiki, hivyo hawapotei baada ya kufunga programu. Ukisoma data mpya, itaongezwa (kuunganishwa) na iliyopo — si kufutwa.
+    </div>
+    <div class="row">
+      <button class="btn secondary small" id="clearStorageBtn">🗑 Futa Hifadhi Yote</button>
+      <span class="stat-mini" id="storageInfo" style="align-self:center;"></span>
+    </div>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none">
+    <input type="text" class="search" id="searchBox" placeholder="Tafuta jina au namba...">
+    <div class="results-head">
+      <h2>Wenye Deni</h2>
+      <span id="countLabel"></span>
+    </div>
+    <div id="debtorList"></div>
+  </div>
+
+</main>
+
+<script>
+let allRows = [];       // raw parsed rows: {name, address, phone, bill, paid, debt, date}
+let filtered = [];      // currently displayed subset
+
+if(typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// ---------- Persistent storage (localStorage) ----------
+const STORAGE_KEY = 'mzingaMaji_wakopaji_v1';
+const SENT_KEY = 'mzingaMaji_waliotumiwa_v1';
+
+function loadFromStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function saveToStorage(rows){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }catch(e){}
+}
+function loadSentSet(){
+  try{
+    const raw = localStorage.getItem(SENT_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  }catch(e){ return new Set(); }
+}
+function saveSentSet(set){
+  try{ localStorage.setItem(SENT_KEY, JSON.stringify(Array.from(set))); }catch(e){}
+}
+const sentSet = loadSentSet();
+
+// Merge newly-parsed rows into the persistent store, keyed by phone (fallback name).
+// Existing debtors are updated (latest bill/paid/debt/date); new ones are appended.
+// Nothing is ever silently deleted here -- this is what keeps "wakopi wote wahifadhiwe".
+function mergeIntoStorage(newRows){
+  const existing = loadFromStorage();
+  const map = new Map(existing.map(r => [r.phone || r.name, r]));
+  for(const r of newRows){
+    const key = r.phone || r.name;
+    map.set(key, r); // latest read overwrites that customer's figures, but the customer itself stays in the list
+  }
+  const merged = Array.from(map.values());
+  saveToStorage(merged);
+  return merged;
+}
+
+function updateStorageInfo(){
+  const el = document.getElementById('storageInfo');
+  if(!el) return;
+  const stored = loadFromStorage();
+  el.textContent = stored.length ? `Wateja waliohifadhiwa: ${stored.length}` : 'Hakuna data iliyohifadhiwa bado.';
+}
+
+// ---------- Mwisho wa malipo (tarehe 10 ya mwezi husika) ----------
+// Hii ni tarehe 10 ya MWEZI WA SASA daima -- haisogei kwenda mwezi ujao hata
+// baada ya kupita, kwa sababu tunahitaji kujua kama tumeipita ili tubadilishe ujumbe.
+function getDeadlineDate(){
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 10);
+}
+function formatDeadline(){
+  const d = getDeadlineDate();
+  const months = ['Januari','Februari','Machi','Aprili','Mei','Juni','Julai','Agosti','Septemba','Oktoba','Novemba','Desemba'];
+  return `10 ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Idadi ya siku kati ya leo na tarehe 10 (chanya = bado kuna siku, 0 = leo, hasi = imepita)
+function daysUntilDeadline(){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const deadline = getDeadlineDate();
+  const diffMs = deadline - today;
+  return Math.round(diffMs / (1000*60*60*24));
+}
+
+// Ujumbe unaobadilika kutegemea siku ya leo dhidi ya tarehe 10:
+//  - bado kuna siku kadhaa: kumbusho la kawaida
+//  - leo ni tarehe 10: onyo kali - leo ndio siku ya mwisho
+//  - imepita tarehe 10: onyo kali zaidi - amechelewa, hatari ya kukatiwa maji
+// Ujumbe unaobadilika kutegemea SIKU (kabla/leo/imepita) NA KIASI cha deni:
+//  - Deni chini ya 3000: lugha ya kielimu/ya upole, inayomweleza mteja kwa nini
+//    kulipa kwa wakati ni muhimu, bila vitisho vya kukatiwa maji.
+//  - Deni 3000 na kuendelea: onyo kali zaidi kama ilivyokuwa awali.
+const MKALI_THRESHOLD = 3000;
+
+function paymentStatusMessage(debt){
+  const days = daysUntilDeadline();
+  const isSmallDebt = (debt !== undefined && debt < MKALI_THRESHOLD);
+
+  if(isSmallDebt){
+    // Lugha ya kielimu: inaeleza umuhimu wa kulipa kwa wakati, bila vitisho.
+    if(days > 0){
+      return `Kulipa kabla ya tarehe ${formatDeadline()} kunatusaidia kuendelea kukuhudumia bila usumbufu na kuepusha malimbikizo ya deni. Asante kwa ushirikiano wako.`;
+    } else if(days === 0){
+      return `Leo ni tarehe ${formatDeadline()}, siku ya mwisho ya malipo ya mwezi huu. Tafadhali jitahidi kulipa leo ili kuepuka deni kuongezeka mwezi ujao.`;
+    } else {
+      const lateDays = Math.abs(days);
+      return `Tarehe ya malipo (${formatDeadline()}) imepita kwa siku ${lateDays}. Deni dogo likiachwa bila kulipwa huongezeka kila mwezi -- tafadhali lipa mapema iwezekanavyo ili kuepuka malimbikizo. Asante.`;
+    }
+  }
+
+  // Deni kubwa (3000+): onyo kali zaidi.
+  if(days > 0){
+    return `Lipa kabla ya tarehe ${formatDeadline()} (zimebaki siku ${days}) ili kuepuka usumbufu.`;
+  } else if(days === 0){
+    return `LEO NDIO SIKU YA MWISHO YA MALIPO (${formatDeadline()}). Lipa HARAKA leo ili kuepuka kukatiwa maji.`;
+  } else {
+    const lateDays = Math.abs(days);
+    return `Tarehe ya mwisho ya malipo (${formatDeadline()}) IMESHAPITA kwa siku ${lateDays}. Timu ipo mtaani ikikata maji kwa wasiolipa -- LIPA SASA HIVI kabla haujafikiwa.`;
+  }
+}
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-paste').classList.toggle('hidden', t.dataset.tab!=='paste');
+    document.getElementById('tab-csv').classList.toggle('hidden', t.dataset.tab!=='csv');
+    document.getElementById('tab-pdf').classList.toggle('hidden', t.dataset.tab!=='pdf');
+  });
+});
+
+// ---------- Helpers ----------
+function normalizePhone(raw){
+  if(!raw) return '';
+  let p = String(raw).replace(/[^\d+]/g,'');
+  if(p.startsWith('+255')) return p;
+  if(p.startsWith('255')) return '+'+p;
+  if(p.startsWith('0')) return '+255'+p.slice(1);
+  if(p.length === 9) return '+255'+p;
+  return p;
+}
+function toNumber(v){
+  if(v===undefined||v===null) return 0;
+  const n = Number(String(v).replace(/[^\d.-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+function formatTZS(n){ return 'TZS ' + Number(n).toLocaleString('en-US'); }
+
+// Split a pasted block into rows/cols. Handles tab-separated (from web tables/Excel)
+// and falls back to multi-space splitting.
+function splitLine(line){
+  if(line.includes('\t')) return line.split('\t').map(s=>s.trim());
+  // fallback: 2+ spaces as separator
+  return line.split(/\s{2,}/).map(s=>s.trim());
+}
+
+function parseRawText(text){
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(l=>l.length>0);
+  const rows = [];
+  let skippedHeader = 0;
+  for(const line of lines){
+    const cols = splitLine(line);
+    if(cols.length < 3) continue;
+    // Try to detect header rows
+    const lower = cols.join(' ').toLowerCase();
+    if(lower.includes('name') && lower.includes('contact')){ skippedHeader++; continue; }
+    if(lower.includes('jina') && lower.includes('namba')){ skippedHeader++; continue; }
+
+    // Expected shape (from Mzinga Maji report): Name, Address, Contact, Bill, Paid, Debt, Bill Date
+    // But be flexible: find phone-like column, and numeric columns.
+    let name='', address='', phone='', bill=0, paid=0, debt=0, date='';
+
+    // find phone column (contains 9-13 digits)
+    let phoneIdx = cols.findIndex(c => /^\+?\d{9,13}$/.test(c.replace(/\s/g,'')));
+    if(phoneIdx === -1) phoneIdx = cols.findIndex(c => /\d{9,}/.test(c));
+
+    if(phoneIdx > -1){
+      name = cols[0] || '';
+      phone = cols[phoneIdx];
+      // numeric columns after phone
+      const numericAfter = cols.slice(phoneIdx+1).map(toNumber);
+      const dateAfter = cols.find(c => /\d{4}-\d{2}-\d{2}/.test(c));
+      // address is likely the column right before phone (if not name itself)
+      if(phoneIdx >= 2) address = cols[phoneIdx-1];
+
+      if(numericAfter.length >= 3){
+        bill = numericAfter[0]; paid = numericAfter[1]; debt = numericAfter[2];
+      } else if(numericAfter.length === 2){
+        bill = numericAfter[0]; debt = numericAfter[1];
+      } else if(numericAfter.length === 1){
+        debt = numericAfter[0];
+      }
+      date = dateAfter || '';
+    } else {
+      // no clear phone found; skip row but keep for manual review
+      continue;
+    }
+
+    rows.push({
+      name: name || '(Jina halijulikani)',
+      address: address || '',
+      phone: normalizePhone(phone),
+      bill, paid, debt,
+      date
+    });
+  }
+  return { rows, skippedHeader };
+}
+
+function parseCSV(text){
+  // simple CSV parser (handles quoted commas minimally)
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  if(!lines.length) return { rows: [] };
+  const headerLine = lines[0].toLowerCase();
+  const delim = headerLine.includes(';') && !headerLine.includes(',') ? ';' : ',';
+  const headers = lines[0].split(delim).map(h=>h.trim().toLowerCase());
+
+  const idx = {
+    name: headers.findIndex(h=>h.includes('name')||h.includes('jina')),
+    address: headers.findIndex(h=>h.includes('address')||h.includes('anwani')),
+    phone: headers.findIndex(h=>h.includes('contact')||h.includes('phone')||h.includes('namba')),
+    bill: headers.findIndex(h=>h==='bill'),
+    paid: headers.findIndex(h=>h==='paid'),
+    debt: headers.findIndex(h=>h.includes('debt')||h.includes('deni')),
+    date: headers.findIndex(h=>h.includes('date')||h.includes('tarehe'))
+  };
+
+  const rows = [];
+  for(let i=1;i<lines.length;i++){
+    const cols = lines[i].split(delim).map(c=>c.trim().replace(/^"|"$/g,''));
+    if(cols.length < 2) continue;
+    rows.push({
+      name: idx.name>-1 ? cols[idx.name] : cols[0],
+      address: idx.address>-1 ? cols[idx.address] : '',
+      phone: normalizePhone(idx.phone>-1 ? cols[idx.phone] : ''),
+      bill: idx.bill>-1 ? toNumber(cols[idx.bill]) : 0,
+      paid: idx.paid>-1 ? toNumber(cols[idx.paid]) : 0,
+      debt: idx.debt>-1 ? toNumber(cols[idx.debt]) : 0,
+      date: idx.date>-1 ? cols[idx.date] : ''
+    });
+  }
+  return { rows };
+}
+
+// Aggregate rows by phone number (a customer may have multiple bill entries across dates)
+function aggregateByPhone(rows){
+  const map = new Map();
+  for(const r of rows){
+    const key = r.phone || r.name;
+    if(!map.has(key)){
+      map.set(key, { name:r.name, address:r.address, phone:r.phone, bill:0, paid:0, debt:0, lastDate:r.date });
+    }
+    const agg = map.get(key);
+    agg.bill += r.bill;
+    agg.paid += r.paid;
+    agg.debt += r.debt;
+    if(r.date && (!agg.lastDate || r.date > agg.lastDate)) agg.lastDate = r.date;
+    if(r.address && !agg.address) agg.address = r.address;
+  }
+  return Array.from(map.values());
+}
+
+// ---------- Parse triggers ----------
+document.getElementById('parseBtn').addEventListener('click', ()=>{
+  const text = document.getElementById('pasteBox').value;
+  const warnEl = document.getElementById('parseWarn');
+  if(!text.trim()){
+    warnEl.textContent = 'Bandika data kwanza kabla ya kubonyeza Soma Data.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+  const { rows, skippedHeader } = parseRawText(text);
+  if(!rows.length){
+    warnEl.textContent = 'Haikuweza kusoma safu yoyote yenye namba ya simu. Hakikisha umenakili safu za Name, Contact, Bill, Paid, Debt.';
+    warnEl.classList.remove('hidden');
+    return;
+  }
+  warnEl.classList.add('hidden');
+  const newAgg = aggregateByPhone(rows);
+  allRows = mergeIntoStorage(newAgg);
+  updateStorageInfo();
+  initControls();
+});
+
+document.getElementById('clearPasteBtn').addEventListener('click', ()=>{
+  document.getElementById('pasteBox').value = '';
+});
+
+document.getElementById('csvFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    const { rows } = parseCSV(evt.target.result);
+    const warnEl = document.getElementById('parseWarn');
+    if(!rows.length){
+      warnEl.textContent = 'Haikuweza kusoma CSV hii. Hakikisha ina safu za Name, Contact, Bill, Paid, Debt.';
+      warnEl.classList.remove('hidden');
+      return;
+    }
+    warnEl.classList.add('hidden');
+    const newAgg = aggregateByPhone(rows);
+    allRows = mergeIntoStorage(newAgg);
+    updateStorageInfo();
+    initControls();
+  };
+  reader.readAsText(file);
+});
+
+// ---------- PDF parsing (via render-to-image + OCR) ----------
+// The Mzinga Maji report PDFs are exported from a web page in a way that does NOT
+// embed real selectable text (it's drawn as vector shapes), so pdf.js text extraction
+// returns almost nothing. The reliable approach is: render each PDF page to an image,
+// detect the table's horizontal grid lines directly from the pixels (this is far more
+// accurate than guessing row height from OCR word spacing, since rows here are packed
+// tightly and naive vertical-distance clustering merges/splits rows incorrectly),
+// then run OCR and assign every recognized word to the row it visually falls inside.
+
+async function renderPdfPageToCanvas(page, scale){
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas;
+}
+
+// Detect horizontal grid-line rows by scanning pixel darkness across each row.
+// A table grid line lights up as a row where a large fraction of pixels are non-white.
+function detectRowBoundaries(canvas){
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  const imgData = ctx.getImageData(0, 0, width, height).data;
+  const darkCounts = new Array(height).fill(0);
+  for(let y=0; y<height; y++){
+    let count = 0;
+    // sample every 2nd pixel horizontally for speed
+    for(let x=0; x<width; x+=2){
+      const idx = (y*width + x) * 4;
+      const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
+      const lum = 0.299*r + 0.587*g + 0.114*b;
+      if(lum < 245) count++;
+    }
+    darkCounts[y] = count;
+  }
+  const threshold = (width/2) * 0.6; // we sampled every 2nd pixel, so width/2 total samples
+  const rawRows = [];
+  for(let y=0; y<height; y++){
+    if(darkCounts[y] > threshold) rawRows.push(y);
+  }
+  // merge consecutive/near y-values (within 3px) into single boundary lines
+  const boundaries = [];
+  for(const y of rawRows){
+    if(boundaries.length && y - boundaries[boundaries.length-1] <= 3) continue;
+    boundaries.push(y);
+  }
+  return boundaries;
+}
+
+// Clean up common OCR misreads for a table that is mostly names + digits.
+// OCR sometimes renders "0" as stray punctuation/letters (e.g. "O", "Q", "(0)", "to)").
+// Rather than listing every possible misread, treat any short token sitting in a
+// numeric column as "0" if it contains no usable digits once non-digit characters
+// are stripped -- this generalizes to OCR noise we haven't seen before too.
+function looksNumericColumn(tok){
+  if(/^\d+$/.test(tok)) return true;
+  if(tok.length > 6) return false; // too long to plausibly be a mis-scanned "0"
+  const digitsOnly = tok.replace(/\D/g,'');
+  return digitsOnly === '' || digitsOnly === '0';
+}
+function ocrToNumber(tok){
+  if(/^\d+$/.test(tok)) return toNumber(tok);
+  const digitsOnly = tok.replace(/\D/g,'');
+  if(digitsOnly === '' || digitsOnly === '0') return 0;
+  return toNumber(digitsOnly);
+}
+
+// Assign OCR words to rows using the detected grid-line boundaries: a word belongs
+// to the row whose boundary interval [boundaries[i], boundaries[i+1]) contains its top.
+// Falls back to gap-based clustering if too few boundaries were detected (e.g. a
+// borderless table), so PDFs without visible gridlines still get a best-effort read.
+function wordsToRowsUsingBoundaries(words, boundaries){
+  if(boundaries.length >= 3){
+    const rowMap = new Map();
+    for(const w of words){
+      let idx = -1;
+      for(let i=0;i<boundaries.length-1;i++){
+        if(w.top >= boundaries[i] && w.top < boundaries[i+1]){ idx = i; break; }
+      }
+      if(idx === -1) continue; // word falls outside any detected row band (e.g. title text)
+      if(!rowMap.has(idx)) rowMap.set(idx, []);
+      rowMap.get(idx).push(w);
+    }
+    const orderedKeys = Array.from(rowMap.keys()).sort((a,b)=>a-b);
+    return orderedKeys.map(k => rowMap.get(k).sort((a,b)=>a.left-b.left).map(w=>w.text));
+  }
+  // fallback: simple gap-based clustering
+  const sorted = words.slice().sort((a,b)=>a.top-b.top || a.left-b.left);
+  const lines = [];
+  let cur = [];
+  let curMaxTop = null;
+  const GAP = 12;
+  for(const w of sorted){
+    if(cur.length===0){ cur.push(w); curMaxTop = w.top; }
+    else if(w.top - curMaxTop <= GAP){ cur.push(w); curMaxTop = Math.max(curMaxTop, w.top); }
+    else { lines.push(cur.sort((a,b)=>a.left-b.left)); cur=[w]; curMaxTop=w.top; }
+  }
+  if(cur.length) lines.push(cur.sort((a,b)=>a.left-b.left));
+  return lines.map(line => line.map(w=>w.text));
+}
+
+// Parse rows shaped like: [nameWord1, nameWord2, ..., addressWord, phone, bill, paid, debt, date]
+// We find the phone token (9-13 digits), everything before it (minus the very last word,
+// which is treated as the address) is joined as the name, and numeric columns after it
+// map to bill/paid/debt, with OCR-safe zero handling.
+function parseOcrRows(lineGroups){
+  const rows = [];
+  for(const cols of lineGroups){
+    if(cols.length < 4) continue;
+    const lower = cols.join(' ').toLowerCase();
+    if(lower.includes('name') && (lower.includes('contact')||lower.includes('address'))) continue;
+    // Skip the report title/footer lines only -- NOT customer rows whose address
+    // happens to be "Mzinga A/B" (a real neighbourhood name in these reports).
+    if(lower.includes('mzinga maji group') || lower.includes('about:blank')) continue;
+    if(/^\d+\s*of\s*\d+/i.test(cols.join(' '))) continue;
+
+    const phoneIdx = cols.findIndex(c => /^\+?\d{9,13}$/.test(c.replace(/\s/g,'')));
+    if(phoneIdx === -1) continue;
+
+    const dateIdx = cols.findIndex(c => /\d{4}-\d{2}-\d{2}/.test(c));
+    const phone = cols[phoneIdx];
+
+    // everything before phone = name + address words; last word before phone = address,
+    // rest = name (handles multi-word names like "Ahmadi juma")
+    const beforePhone = cols.slice(0, phoneIdx);
+    let name = beforePhone.join(' ');
+    let address = '';
+    if(beforePhone.length >= 2){
+      address = beforePhone[beforePhone.length-1];
+      name = beforePhone.slice(0, -1).join(' ');
+    }
+
+    // numeric columns between phone and date (or to end if no date found)
+    const afterPhoneEnd = dateIdx > -1 ? dateIdx : cols.length;
+    const numericTokens = cols.slice(phoneIdx+1, afterPhoneEnd).filter(t => /^\d+$/.test(t) || looksNumericColumn(t));
+    const nums = numericTokens.map(ocrToNumber);
+
+    let bill=0, paid=0, debt=0;
+    if(nums.length >= 3){ bill=nums[0]; paid=nums[1]; debt=nums[2]; }
+    else if(nums.length === 2){ bill=nums[0]; debt=nums[1]; }
+    else if(nums.length === 1){ debt=nums[0]; }
+
+    rows.push({
+      name: name.trim() || '(Jina halijulikani)',
+      address: address.trim(),
+      phone: normalizePhone(phone),
+      bill, paid, debt,
+      date: dateIdx>-1 ? cols[dateIdx] : ''
+    });
+  }
+  return rows;
+}
+
+async function extractRowsFromPdfViaOcr(arrayBuffer, onProgress, onPageDone){
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let allLineGroups = [];
+  let worker;
+  // Try to keep the screen awake during long multi-page OCR runs on mobile,
+  // where the browser can throttle/pause background tabs and silently stall.
+  let wakeLock = null;
+  try{
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen').catch(()=>null);
+    }
+  }catch(e){ /* not supported, ignore */ }
+
+  try{
+    if(onProgress) onProgress('Inaandaa kisomaji cha maandishi (OCR)... (mara ya kwanza inaweza kuchukua muda kupakua)');
+    worker = await Tesseract.createWorker('eng', 1, {
+      logger: (m)=>{
+        if(!onProgress) return;
+        if(m.status === 'recognizing text' && typeof m.progress === 'number'){
+          onProgress(`Inasoma maandishi... ${Math.round(m.progress*100)}%`);
+        } else if(m.status){
+          onProgress(m.status.charAt(0).toUpperCase()+m.status.slice(1)+'...');
+        }
+      }
+    });
+
+    for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+      if(onProgress) onProgress(`Inasoma ukurasa ${pageNum}/${pdf.numPages}...`);
+      try{
+        const page = await pdf.getPage(pageNum);
+        // scale 2.0 balances OCR accuracy vs speed -- important on large (20+ page) reports
+        const canvas = await renderPdfPageToCanvas(page, 2.0);
+        const boundaries = detectRowBoundaries(canvas);
+        const result = await worker.recognize(canvas);
+        const data = result && result.data ? result.data : null;
+        if(!data) throw new Error('OCR haikurudisha data kwa ukurasa '+pageNum);
+        const wordsArr = data.words || [];
+        const words = wordsArr.map(w => ({
+          text: (w.text||'').trim(),
+          top: w.bbox.y0,
+          left: w.bbox.x0
+        })).filter(w => w.text.length > 0);
+        const lineGroups = wordsToRowsUsingBoundaries(words, boundaries);
+        allLineGroups = allLineGroups.concat(lineGroups);
+        // Save progress after EVERY page so a stall/crash later doesn't lose earlier pages.
+        if(onPageDone) onPageDone(parseOcrRows(allLineGroups), pageNum, pdf.numPages);
+      }catch(pageErr){
+        // Skip a single bad page rather than aborting the whole document --
+        // partial data (24 good pages) is far more useful than none.
+        console.error('Ukurasa '+pageNum+' umeshindikana:', pageErr);
+        if(onProgress) onProgress(`Ukurasa ${pageNum} umeshindwa kusomwa, naendelea na unaofuata...`);
+      }
+    }
+  } finally {
+    if(worker) await worker.terminate();
+    if(wakeLock) wakeLock.release().catch(()=>{});
+  }
+  return parseOcrRows(allLineGroups);
+}
+
+document.getElementById('pdfFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('pdfStatus');
+  const warnEl = document.getElementById('parseWarn');
+  statusEl.textContent = 'Inaanza kusoma PDF (OCR)... hii inaweza kuchukua sekunde chache.';
+  warnEl.classList.add('hidden');
+  const reader = new FileReader();
+  reader.onload = async (evt)=>{
+    try{
+      if(typeof Tesseract === 'undefined'){
+        throw new Error('Kisomaji cha OCR hakijapakia (mtandao unaweza kuwa mzito). Hakikisha una mtandao mzuri kisha jaribu tena.');
+      }
+      const rows = await extractRowsFromPdfViaOcr(
+        evt.target.result,
+        (msg)=>{ statusEl.textContent = msg; },
+        (partialRows, pageNum, totalPages)=>{
+          // Save after every page: if OCR stalls/crashes on page 15 of 25,
+          // the first 14 pages of debtors are already safely stored.
+          if(partialRows.length){
+            const newAgg = aggregateByPhone(partialRows);
+            allRows = mergeIntoStorage(newAgg);
+            updateStorageInfo();
+            statusEl.textContent = `Ukurasa ${pageNum}/${totalPages} umekamilika — wateja ${allRows.length} wamehifadhiwa hadi sasa...`;
+          }
+        }
+      );
+      if(!rows.length){
+        statusEl.textContent = '';
+        warnEl.textContent = 'Haikuweza kusoma safu yoyote yenye namba ya simu kutoka kwenye PDF hii. Jaribu kutumia CSV au bandika data mwenyewe.';
+        warnEl.classList.remove('hidden');
+        return;
+      }
+      statusEl.textContent = `Imekamilika: safu ${rows.length} zimesomwa na kuhifadhiwa kutoka kwenye PDF.`;
+      const newAgg = aggregateByPhone(rows);
+      allRows = mergeIntoStorage(newAgg);
+      updateStorageInfo();
+      initControls();
+    }catch(err){
+      statusEl.textContent = '';
+      const msg = (err && err.message) ? err.message : 'Hitilafu isiyojulikana. Jaribu tena au tumia mtandao wa haraka zaidi.';
+      warnEl.innerHTML = 'Hitilafu wakati wa kusoma PDF: ' + msg + '<br><br>Data ya kurasa zilizokwisha kusomwa kabla ya hitilafu tayari imehifadhiwa. Kama tatizo linaendelea, unaweza kuona kurasa za PDF kama picha hapa chini na kunakili data iliyobaki mwenyewe kwenye kichupo cha "Bandika Data".';
+      warnEl.classList.remove('hidden');
+      if(allRows.length) initControls();
+      try{
+        await showPdfPagesAsImages(evt.target.result);
+      }catch(e2){ /* ignore secondary failure */ }
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Fallback: render PDF pages as plain images the user can visually read/copy from,
+// used when OCR fails (e.g. no network for the language data on first use).
+async function showPdfPagesAsImages(arrayBuffer){
+  const statusEl = document.getElementById('pdfStatus');
+  let holder = document.getElementById('pdfPagesPreview');
+  if(!holder){
+    holder = document.createElement('div');
+    holder.id = 'pdfPagesPreview';
+    holder.style.marginTop = '12px';
+    document.getElementById('tab-pdf').appendChild(holder);
+  }
+  holder.innerHTML = '';
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+    const page = await pdf.getPage(pageNum);
+    const canvas = await renderPdfPageToCanvas(page, 1.8);
+    canvas.style.width = '100%';
+    canvas.style.border = '1px solid var(--line)';
+    canvas.style.borderRadius = '8px';
+    canvas.style.marginBottom = '10px';
+    holder.appendChild(canvas);
+  }
+  statusEl.textContent = '';
+}
+
+// Load previously-saved debtors on page start, so nothing is lost between sessions.
+window.addEventListener('DOMContentLoaded', ()=>{
+  updateStorageInfo();
+  const stored = loadFromStorage();
+  if(stored.length){
+    allRows = stored;
+    initControls();
+  }
+});
+
+document.getElementById('clearStorageBtn').addEventListener('click', ()=>{
+  if(!confirm('Una uhakika unataka kufuta HIFADHI YOTE ya wakopaji waliohifadhiwa kwenye kifaa hiki? Hatua hii haiwezi kurudishwa.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SENT_KEY);
+  sentSet.clear();
+  allRows = [];
+  filtered = [];
+  document.getElementById('controlsCard').style.display = 'none';
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('bulkCard').style.display = 'none';
+  updateStorageInfo();
+});
+
+// ---------- Controls & rendering ----------
+function initControls(){
+  document.getElementById('controlsCard').style.display = 'block';
+  document.getElementById('resultsCard').style.display = 'block';
+  document.getElementById('bulkCard').style.display = 'block';
+  applyFilter();
+}
+
+function applyFilter(){
+  const mode = document.getElementById('filterMode').value;
+  const minDebt = toNumber(document.getElementById('minDebt').value);
+  filtered = allRows.filter(r=>{
+    if(mode === 'debt_only' && r.debt <= 0) return false;
+    return r.debt >= minDebt || mode === 'all';
+  });
+  // sort by debt descending
+  filtered.sort((a,b)=>b.debt - a.debt);
+  render(filtered);
+}
+
+document.getElementById('applyFilterBtn').addEventListener('click', applyFilter);
+
+document.getElementById('applyTemplateBtn').addEventListener('click', ()=>{
+  render(filtered);
+});
+
+function fillTemplate(tpl, d){
+  return tpl
+    .replaceAll('{jina}', d.name)
+    .replaceAll('{deni}', formatTZS(d.debt))
+    .replaceAll('{anwani}', d.address || '')
+    .replaceAll('{namba}', d.phone || '')
+    .replaceAll('{tarehe}', d.lastDate || '')
+    .replaceAll('{mwisho}', formatDeadline())
+    .replaceAll('{hali}', paymentStatusMessage(d.debt));
+}
+
+const debtorList = document.getElementById('debtorList');
+const countLabel = document.getElementById('countLabel');
+const totalAmount = document.getElementById('totalAmount');
+
+function render(list){
+  debtorList.innerHTML = '';
+  if(!list.length){
+    debtorList.innerHTML = '<div class="empty">Hakuna aliyeonekana kwa vigezo hivi.</div>';
+    countLabel.textContent = '';
+    totalAmount.textContent = formatTZS(0);
+    return;
+  }
+  const tpl = document.getElementById('template').value;
+  let total = 0;
+  list.forEach((d, idx) => {
+    total += Number(d.debt)||0;
+    const isSent = sentSet.has(d.phone);
+    const div = document.createElement('div');
+    div.className = 'debtor' + (isSent ? ' sent' : '');
+    const msgId = 'msg_'+idx;
+    div.innerHTML = `
+      <div class="name">${d.name}${isSent ? ' ✅' : ''}</div>
+      <div class="meta">${d.phone || 'Namba haijaonekana'} ${d.address ? '· '+d.address : ''}</div>
+      <div class="amount">${formatTZS(d.debt)}</div>
+      <div class="meta">Mwisho wa malipo: <b>${formatDeadline()}</b> — <span style="color:${daysUntilDeadline()>0 ? 'var(--ok)' : (daysUntilDeadline()===0 ? 'var(--sand)' : 'var(--danger)')}; font-weight:600;">${daysUntilDeadline()>0 ? 'zimebaki siku '+daysUntilDeadline() : (daysUntilDeadline()===0 ? 'LEO NDIO MWISHO' : 'IMEPITA siku '+Math.abs(daysUntilDeadline()))}</span></div>
+      <textarea id="${msgId}">${fillTemplate(tpl, d)}</textarea>
+      <div class="actions">
+        <button class="send-btn" data-phone="${d.phone}" data-msgid="${msgId}">📱 SMS</button>
+        <button class="wa-btn" data-phone="${d.phone}" data-msgid="${msgId}">💬 WhatsApp</button>
+        <button class="mark-btn" data-phone="${d.phone}">${isSent ? 'Ondoa alama' : 'Tia alama: Imetumwa'}</button>
+      </div>
+    `;
+    debtorList.appendChild(div);
+  });
+  countLabel.textContent = list.length + ' watu';
+  totalAmount.textContent = formatTZS(total);
+
+  document.querySelectorAll('.send-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const phone = btn.getAttribute('data-phone');
+      const msg = document.getElementById(btn.getAttribute('data-msgid')).value;
+      if(!phone){ alert('Namba ya simu haikutambulika. Tafadhali ibonyeze mwenyewe.'); return; }
+      window.location.href = `sms:${phone}?body=${encodeURIComponent(msg)}`;
+    });
+  });
+  document.querySelectorAll('.wa-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const phone = btn.getAttribute('data-phone').replace('+','');
+      const msg = document.getElementById(btn.getAttribute('data-msgid')).value;
+      if(!phone){ alert('Namba ya simu haikutambulika.'); return; }
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    });
+  });
+  document.querySelectorAll('.mark-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const phone = btn.getAttribute('data-phone');
+      if(sentSet.has(phone)) sentSet.delete(phone); else sentSet.add(phone);
+      saveSentSet(sentSet);
+      render(filtered);
+    });
+  });
+}
+
+// ---------- Tuma kwa Wote (bulk SMS queue) ----------
+// Simu haziwezi kutuma SMS nyingi kwa app moja bila mtumiaji kubonyeza "Tuma" kila mara
+// (hii ni kizuizi cha mfumo wa simu, si cha programu hii). Njia bora zaidi ni "queue":
+// tunafungua SMS moja, mtumiaji anabonyeza tuma, kisha inayofuata inafunguka yenyewe.
+let bulkQueue = [];
+let bulkIndex = 0;
+let bulkTimer = null;
+const BULK_DELAY_MS = 3500; // muda kati ya kufungua kila SMS
+
+function startBulkSend(){
+  bulkQueue = filtered.filter(d => d.phone); // wale wenye namba pekee
+  bulkIndex = 0;
+  if(!bulkQueue.length){
+    alert('Hakuna namba za simu zilizotambulika kwenye orodha ya sasa.');
+    return;
+  }
+  document.getElementById('bulkSendBtn').style.display = 'none';
+  document.getElementById('stopBulkBtn').style.display = 'block';
+  sendNextInQueue();
+}
+
+function sendNextInQueue(){
+  const progressEl = document.getElementById('bulkProgress');
+  if(bulkIndex >= bulkQueue.length){
+    progressEl.textContent = `Imekamilika: SMS ${bulkQueue.length} zilifunguliwa.`;
+    stopBulkSend();
+    return;
+  }
+  const d = bulkQueue[bulkIndex];
+  const tpl = document.getElementById('template').value;
+  const msg = fillTemplate(tpl, d);
+  progressEl.textContent = `Inatuma ${bulkIndex+1}/${bulkQueue.length}: ${d.name}...`;
+  window.location.href = `sms:${d.phone}?body=${encodeURIComponent(msg)}`;
+  sentSet.add(d.phone);
+  saveSentSet(sentSet);
+  bulkIndex++;
+  bulkTimer = setTimeout(sendNextInQueue, BULK_DELAY_MS);
+}
+
+function stopBulkSend(){
+  if(bulkTimer) clearTimeout(bulkTimer);
+  bulkTimer = null;
+  document.getElementById('bulkSendBtn').style.display = 'block';
+  document.getElementById('stopBulkBtn').style.display = 'none';
+  render(filtered);
+}
+
+document.getElementById('bulkSendBtn').addEventListener('click', startBulkSend);
+document.getElementById('stopBulkBtn').addEventListener('click', ()=>{
+  document.getElementById('bulkProgress').textContent = `Imesimamishwa baada ya ${bulkIndex}/${bulkQueue.length}.`;
+  stopBulkSend();
+});
+
+document.getElementById('searchBox').addEventListener('input', (e)=>{
+  const q = e.target.value.toLowerCase().trim();
+  if(!q){ render(filtered); return; }
+  const subset = filtered.filter(d =>
+    d.name.toLowerCase().includes(q) || (d.phone||'').includes(q)
+  );
+  render(subset);
+});
+</script>
+</body>
+</html>
